@@ -1,6 +1,6 @@
 # XForge SDK 🧠💻
 
-XForge SDK is a specialized Python library for simulating the execution of Deep Learning models (like YOLO) on **Neuromorphic X2** hardware. It provides tools for image preprocessing, neural network weight binarization, and hardware performance benchmarking.
+XForge SDK is a specialized Python library for simulating the execution of Deep Learning models (like YOLO) on **Neuromorphic X2** hardware. It provides tools for image preprocessing and post processing, quantization, and hardware performance benchmarking.
 
 ---
 
