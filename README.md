@@ -4,23 +4,45 @@ XForge SDK is a specialized Python library for simulating the execution of Deep 
 
 ---
 
-## 🚀 Features
+## XForge SDK Architecture
 
-- **YOLO Integration:** Extract weights directly from YOLOv8 models for hardware analysis.
-- **Crossbar Mapping:** Automatically format weights into Signed or Unsigned 64x64/64x32 crossbar grids.
-- **Hardware Simulation:** Benchmarks PE (Processing Element) utilization, operation counts, and L2 buffer writes.
-- **Image Processing:** Standardized RGB channel splitting and resizing for neuromorphic inputs.
+![XForge SDK PE datapath](assets/XfORGE_SDK.png)
+
+The XForge SDK follows a 32 x 32 crossbar PE view. Input image or prompt data is
+preprocessed and quantized, then the mapper and scheduler emit the loop
+dimensions `R/S/X/Y/C/K` into the PE. Inside the PE, data flows through the
+input FIFO, compute FIFO, 32 x 32 crossbar array, ADC / IV-ADC / SAR-TDC sensing
+block, output FIFO, bias/requantization stage, and L2 buffer before moving to
+the next tensor.
+
+| Block | SDK setting |
+|---|---:|
+| L2 buffer size | 512 KB |
+| Input FIFO | 32-bit width, 32-entry depth |
+| Output FIFO | 32-bit width, 32-entry depth |
+| Compute FIFO | 8-bit width, 32-entry depth |
+| Crossbar array | 32 x 32 INT8 array |
+
+The input and output FIFOs use 32-bit paths for tensor movement, while the
+compute FIFO uses an 8-bit data path with 32-entry depth for the values consumed
+by the crossbar. Because signed weights must be represented on an analog
+crossbar, the PE uses a column-differential strategy: each signed logical column
+is split into positive and negative branches, both branches are sensed, and the
+signed result is reconstructed by subtracting the negative branch from the
+positive branch.
+
+The DMA SRAM path is used for parallelism. DMA writeback and readback let PE data
+movement run alongside compute, so Wishbone transactions do not slow the flow of
+processed data through the pipeline.
 
 ---
 
 ## 🛠 Installation
 
-### Install via Git (Recommended)
-
-Install the latest version directly from the GitHub repository:
+Install the latest version:
 
 ```bash
-pip install git+https://github.com/BMsemi/XForge_sdk.git
+pip install XForgeSDK==0.1.2
 ```
 
 ## 📖 Quick Start
@@ -29,10 +51,10 @@ pip install git+https://github.com/BMsemi/XForge_sdk.git
 ```python
 import streamlit as st
 import numpy as np
-from XForge import NeuromorphicSimulator, ImageProcessor, YOLOWrapper
+from XForge_SDK import NeuromorphicSimulator, ImageProcessor, YOLOWrapper
 
 # Page Config
-st.set_page_config(page_title="XForge Dashboard", layout="wide")
+st.set_page_config(page_title="XForge SDK Dashboard", layout="wide")
 
 # 1. Initialize SDK Components
 # These replace the manual logic previously scattered in app.py and user.py
@@ -41,7 +63,7 @@ def init_sdk():
     return {
         "sim": NeuromorphicSimulator(num_pes=64),
         "processor": ImageProcessor(),
-        "yolo": YOLOWrapper('yolov8n.pt')
+        "yolo": YOLOWrapper('yolon26n.pt')
     }
 
 sdk = init_sdk()
