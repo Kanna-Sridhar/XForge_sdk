@@ -8,6 +8,28 @@ XForge SDK is a specialized Python library for simulating the execution of Deep 
 
 ![XForge SDK PE datapath](assets/XfORGE_SDK.png)
 
+### Compiler Dataflow
+
+```mermaid
+flowchart LR
+    A["YOLO TFLite model"] --> B["TFLite frontend"]
+    B --> C["Generic MLIR<br/>compiled tile ops"]
+    C --> D["Constants and manifests"]
+    D --> E["Hybrid runtime scheduler"]
+    E --> F["CPU path<br/>depthwise and digital operators"]
+    E --> G["Neuromorphic emulator"]
+    E --> H["Backend"]
+    H --> I["DDR buffers"]
+    I --> J["Reader/writer"]
+    J --> K["Engine 0"]
+    J --> L["Engine 1"]
+    F --> M["INT32 results"]
+    G --> M
+    K --> M
+    L --> M
+    M --> E
+```
+
 The XForge SDK follows a 32 x 32 crossbar PE view. Input image or prompt data is
 preprocessed and quantized, then the mapper and scheduler emit the loop
 dimensions `R/S/X/Y/C/K` into the PE. Inside the PE, data flows through the
